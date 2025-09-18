@@ -89,17 +89,24 @@ async function leave_chat(channel_id: Snowflake){
 /*
     PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO
 */
-async function beep(channel_id: Snowflake, fpath: string){
-  const channel = await client.channels.fetch(channel_id);
+import * as stream from "node:stream";
+// copy all the audio files into ram first
+const opodes = new Map(
+  fs.readdirSync(".",{encoding:"utf8",recursive:true})
+  .filter(s=>s.endsWith(".opus"))
+  .map(fname=>[fname.replace('\\','/').slice(0,-5), fs.readFileSync(fname)])
+);
 
-  if (channel instanceof VoiceChannel){
-    if (fpath.includes(".")) return;
-    if (fpath.split("/").length !== 2) return;
+function brstm(somebuffer:Buffer){
+  const stm = new stream.Readable({highWaterMark:somebuffer.length});
+  stm.push(somebuffer);
+  stm.push(null);
+  return stm;
+}
 
-    const pill = path.resolve(`./${fpath}.opus`);
-    if (fs.existsSync(pill)) {
-      players.get(channel_id)?.play(createAudioResource(fs.createReadStream(pill), {inputType:StreamType.OggOpus}));
-    }
+function beep(channel_id: Snowflake, fpath:string){
+  if (players.has(channel_id) && opodes.has(fpath)){
+    players.get(channel_id)!.play(createAudioResource(brstm(opodes.get(fpath)!), {inputType:StreamType.OggOpus}));
   }
 }
 
