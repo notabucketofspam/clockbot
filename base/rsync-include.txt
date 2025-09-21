@@ -1,11 +1,5 @@
-Adventures/***
+opodes/***
 html/***
 keys/***
-Misc/***
-Pizza/***
-DoubleTrouble/***
-Turkey/***
-SoupOrSmash/***
 app.js
 package.json
-SoupStore/***

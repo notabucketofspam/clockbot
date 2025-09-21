@@ -92,9 +92,9 @@ async function leave_chat(channel_id: Snowflake){
 import * as stream from "node:stream";
 // copy all the audio files into ram first
 const opodes = new Map(
-  fs.readdirSync(".",{encoding:"utf8",recursive:true})
+  fs.readdirSync("./opodes",{encoding:"utf8",recursive:true})
   .filter(s=>s.endsWith(".opus"))
-  .map(fname=>[fname.replace('\\','/').slice(0,-5), fs.readFileSync(fname)])
+  .map(fname=>[fname.replace('\\','/').slice(0,-5), fs.readFileSync(`opodes/${fname}`)])
 );
 
 function brstm(somebuffer:Buffer){
