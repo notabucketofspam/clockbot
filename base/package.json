@@ -13,7 +13,6 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@types/libsodium-wrappers": "^0.7.14",
     "@types/node": "^22.15.30",
     "@types/sodium-native": "^2.3.9",
     "eslint": "^9.28.0",
@@ -24,7 +23,6 @@
     "@discordjs/voice": "^0.18.0",
     "bufferutil": "^4.0.9",
     "discord.js": "^14.19.3",
-    "libsodium-wrappers": "^0.7.15",
     "sodium-native": "^5.0.6"
   }
 }
