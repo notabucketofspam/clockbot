@@ -7,7 +7,7 @@ import * as fs from "node:fs";
 import * as path from 'node:path';
 const token = fs.readFileSync(path.resolve("./keys/discord_bot_token"), {encoding:'utf8'});
 
-import {Client, Events, GatewayIntentBits, VoiceChannel, SlashCommandBuilder, Collection, Snowflake, CommandInteraction, MessageFlags, Guild} from "discord.js";
+import {Client, Events, GatewayIntentBits, VoiceChannel, SlashCommandBuilder, Collection, Snowflake, CommandInteraction, MessageFlags} from "discord.js";
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
 function login(){
   client.once(Events.ClientReady, readyClient => {
@@ -46,7 +46,7 @@ client.on(Events.InteractionCreate, async interaction =>{
 /*
     VOICE CHAT    VOICE CHAT    VOICE CHAT    VOICE CHAT    VOICE CHAT    VOICE CHAT    VOICE CHAT    VOICE CHAT
 */
-import { joinVoiceChannel, VoiceConnection, createAudioPlayer, createAudioResource,StreamType, AudioPlayer, getVoiceConnection } from "@discordjs/voice";
+import { joinVoiceChannel, createAudioPlayer, createAudioResource,StreamType, AudioPlayer, getVoiceConnection } from "@discordjs/voice";
 
 const players = new Map<Snowflake, AudioPlayer>();
 
@@ -113,38 +113,29 @@ function beep(channel_id: Snowflake, fpath:string){
 /*
     HTTP SERVER    HTTP SERVER    HTTP SERVER    HTTP SERVER    HTTP SERVER    HTTP SERVER    HTTP SERVER
 */
+import * as qs from 'node:querystring';
 import * as http from 'node:http';
-const server = http.createServer();
+const server = http.createServer({noDelay:true});
 server.on('request', (req, res) => {
-  if (req.method === "GET"){
+  if (req.method !== "GET"){
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain');
     res.end('sorry nothing');
-  } else if(req.url){
-    const earl = new URL("http://localhost"+req.url);
-    const sparams = earl.searchParams;
-    const channel_id = sparams.get("q");
-    if (typeof channel_id === "string") {
-      if (req.method === "POST") {
-        req.setEncoding("utf8");
-        let somedata = "";
-        req.on("data", chunk=>{
-          somedata += chunk;
-        });
-        req.once("end", ()=>{
-          //cog(somedata);
-          if (somedata === "getinchat()"){
-            getinchat(channel_id);
-          } else if (somedata === "leave_chat()"){
-            leave_chat(channel_id);
-          } else{
-            beep(channel_id, somedata);
-          }
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'text/plain');
-          res.end('');
-        });
-      }
+  } else if(req.url?.startsWith('/cmd?')){
+    const qobj = qs.parse(req.url.slice(5));
+    const channel_id = qobj["q"];
+    const somedata = qobj["f"];
+    if (typeof channel_id === "string" && typeof somedata === "string") {
+      if (somedata === "getinchat()"){
+        getinchat(channel_id);
+      } else if (somedata === "leave_chat()"){
+        leave_chat(channel_id);
+      } else{
+        beep(channel_id, somedata);
+      }      
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'text/plain');
+      res.end('');
     }
   }
 });
