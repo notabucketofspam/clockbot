@@ -91,11 +91,15 @@ async function leave_chat(channel_id: Snowflake){
 */
 import * as stream from "node:stream";
 // copy all the audio files into ram first
-const opodes = new Map(
-  fs.readdirSync("./opodes",{encoding:"utf8",recursive:true})
-  .filter(s=>s.endsWith(".opus"))
-  .map(fname=>[fname.replace('\\','/').slice(0,-5), fs.readFileSync(`opodes/${fname}`)])
-);
+let opodes:Map<string,Buffer>;
+function refreshOpodes(){
+  opodes = new Map(
+    fs.readdirSync("./opodes",{encoding:"utf8",recursive:true})
+    .filter(s=>s.endsWith(".opus"))
+    .map(fname=>[fname.replace('\\','/').slice(0,-5), fs.readFileSync(`opodes/${fname}`)])
+  );
+}
+refreshOpodes();
 
 function brstm(somebuffer:Buffer){
   const stm = new stream.Readable({highWaterMark:somebuffer.length});
@@ -137,6 +141,9 @@ server.on('request', (req, res) => {
       res.setHeader('Content-Type', 'text/plain');
       res.end('');
     }
+  } else {
+    refreshOpodes();
+    res.end('');
   }
 });
 server.listen(39692, 'localhost');
