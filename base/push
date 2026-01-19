@@ -7,5 +7,5 @@ rsync \
   --delete \
   -e "ssh -i \"./notkeys/key\"" \
   ./ ubuntu@193.122.154.50:/var/www/
-ssh -i "./notkeys/key" ubuntu@193.122.154.50 "pm2 restart cb > /dev/null"
+ssh -i "./notkeys/key" ubuntu@193.122.154.50 "pm2 restart clockbot > /dev/null"
 echo "Done"
