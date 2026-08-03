@@ -21,11 +21,13 @@
     "@discordjs/opus": "^0.10.0",
     "@discordjs/voice": "^0.19.2",
     "@snazzah/davey": "^0.1.12",
+    "bufferutil": "^4.1.0",
     "discord.js": "^14.27.0",
     "lru-cache": "^11.5.2",
     "ws": "^8.21.1"
   },
   "allowScripts": {
-    "@discordjs/opus@0.10.0": true
+    "@discordjs/opus@0.10.0": true,
+    "bufferutil@4.1.0": true
   }
 }
