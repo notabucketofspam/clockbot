@@ -8,5 +8,5 @@ rsync \
   --times \
   -e "ssh -i \"./notkeys/key\"" \
   ./ ubuntu@193.122.154.50:/var/www/
-ssh -i "./notkeys/key" ubuntu@193.122.154.50 "curl localhost:39692"
+ssh -i "./notkeys/key" ubuntu@193.122.154.50 "curl localhost:39692/refresh"
 echo "Done"

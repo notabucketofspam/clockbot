@@ -14,6 +14,7 @@
   "description": "",
   "devDependencies": {
     "@types/node": "^26.1.2",
+    "@types/ws": "^8.18.1",
     "typescript": "^7.0.2"
   },
   "dependencies": {
@@ -21,7 +22,8 @@
     "@discordjs/voice": "^0.19.2",
     "@snazzah/davey": "^0.1.12",
     "discord.js": "^14.27.0",
-    "lru-cache": "^11.5.2"
+    "lru-cache": "^11.5.2",
+    "ws": "^8.21.1"
   },
   "allowScripts": {
     "@discordjs/opus@0.10.0": true

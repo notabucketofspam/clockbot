@@ -138,35 +138,56 @@ function beep(channel_id: Snowflake, fpath:string){
 /*
     HTTP SERVER    HTTP SERVER    HTTP SERVER    HTTP SERVER    HTTP SERVER    HTTP SERVER    HTTP SERVER
 */
-import * as qs from 'node:querystring';
-import * as http from 'node:http';
+import qs from 'node:querystring';
+import http from 'node:http';
 const server = http.createServer({noDelay:true});
 server.on('request', (req, res) => {
   if (req.method !== "GET"){
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain');
     res.end('sorry nothing');
-  } else if(req.url?.startsWith('/cmd?')){
-    const qobj = qs.parse(req.url.slice(5));
-    const channel_id = qobj["q"];
-    const somedata = qobj["f"];
-    if (typeof channel_id === "string" && typeof somedata === "string") {
-      if (somedata === "getinchat()"){
-        getinchat(channel_id);
-      } else if (somedata === "leave_chat()"){
-        leave_chat(channel_id);
-      } else{
-        beep(channel_id, somedata);
-      }      
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'text/plain');
-      res.end('');
+  } else if(req.url){
+    // just handle everything
+    if (req.url.startsWith('/cmd?')){
+      parseUrlQuery(req.url);
+    } else if (req.url.startsWith('/refresh')){
+      refreshOpodes();
+    } else {
+      // do nothing, i guess
     }
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/plain');
+    res.end('');
   } else {
-    refreshOpodes();
+    // basically ignore
     res.end('');
   }
 });
-server.listen(39692, 'localhost');
 
-login();
+export function parseUrlQuery(url: string){
+  const justTheQuery = url.slice(url.indexOf('?') + 1);
+  const qobj = qs.parse(justTheQuery);
+  const channel_id = qobj["q"];
+  const somedata = qobj["f"];
+  if (typeof channel_id === "string" && typeof somedata === "string") {
+    if (somedata === "getinchat()"){
+      getinchat(channel_id);
+    } else if (somedata === "leave_chat()"){
+      leave_chat(channel_id);
+    } else{
+      beep(channel_id, somedata);
+    }
+  } else {
+    // invalid query, ignore
+  }
+}
+
+import {initWSS} from './websocket.js';
+
+function initialization(){
+  initWSS(server);
+  server.listen(39692, 'localhost');
+  login();
+}
+initialization();
+
