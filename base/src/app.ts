@@ -3,8 +3,8 @@ var cog = console.log;
 /*
     DISCORD CLIENT    DISCORD CLIENT    DISCORD CLIENT    DISCORD CLIENT    DISCORD CLIENT    DISCORD CLIENT
 */
-import * as fs from "node:fs";
-import * as path from 'node:path';
+import fs from "node:fs";
+import path from 'node:path';
 const token = fs.readFileSync(path.resolve("./keys/discord_bot_token"), {encoding:'utf8'});
 
 import {Client, Events, GatewayIntentBits, VoiceChannel, SlashCommandBuilder, Collection, Snowflake, CommandInteraction, MessageFlags} from "discord.js";
@@ -48,7 +48,7 @@ client.on(Events.InteractionCreate, async interaction =>{
 */
 import { joinVoiceChannel, createAudioPlayer, createAudioResource,StreamType, AudioPlayer, getVoiceConnection } from "@discordjs/voice";
 
-const players = new Map<Snowflake, AudioPlayer>();
+const players: Record<Snowflake, AudioPlayer> = Object.create(null);
 
 /**
  * 
@@ -67,7 +67,7 @@ async function getinchat(channel_id: Snowflake){
     });
     const player = createAudioPlayer();
     connection.subscribe(player);
-    players.set(channel_id, player);
+    players[channel_id] = player;
   }
 }
 /**
@@ -80,9 +80,9 @@ async function leave_chat(channel_id: Snowflake){
   if (channel instanceof VoiceChannel){
     const connection = getVoiceConnection(channel.guild.id);
     connection?.destroy();
-    const player = players.get(channel_id);
+    const player = players[channel_id];
     player?.stop();
-    players.delete(channel_id);
+    delete players[channel_id];
   }
 }
 
@@ -116,7 +116,6 @@ function getOpodeResource(fpath: string) {
 /*
     PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO
 */
-import * as stream from "node:stream";
 // copy all the audio file paths into ram first
 let opodes: Set<string>;
 function refreshOpodes(){
@@ -126,19 +125,13 @@ function refreshOpodes(){
     .map(fname=>fname.replace('\\','/').slice(0,-5))
   );
   opode_cache.clear();
+  console.log(`refreshed opodes: ${opodes.size} files`);
 }
 refreshOpodes();
 
-function brstm(somebuffer:Buffer){
-  const stm = new stream.Readable({highWaterMark:somebuffer.length});
-  stm.push(somebuffer);
-  stm.push(null);
-  return stm;
-}
-
 function beep(channel_id: Snowflake, fpath:string){
-  if (players.has(channel_id) && opodes.has(fpath)){
-    players.get(channel_id)?.play(getOpodeResource(fpath));
+  if (players[channel_id] && opodes.has(fpath)){
+    players[channel_id]?.play(getOpodeResource(fpath));
   }
 }
 
