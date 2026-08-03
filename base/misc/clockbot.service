@@ -1,0 +1,20 @@
+[Unit]
+Description=Clockbot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=johnmadden
+Group=johnmadden
+
+WorkingDirectory=/var/www
+ExecStart=/usr/bin/node /var/www
+
+Restart=always
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

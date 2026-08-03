@@ -87,17 +87,45 @@ async function leave_chat(channel_id: Snowflake){
 }
 
 /*
+  memory management
+*/
+import {Readable} from "node:stream";
+import { LRUCache } from "lru-cache";
+const opode_cache = new LRUCache<string, Buffer>({
+  maxSize: 50 * 2**20, // 50 MB
+  sizeCalculation: (value, key) => {
+    return value.byteLength;
+  },
+  ttl: 1000 * 60 * 60 * 24, // 1 day
+});
+
+function getOpodeResource(fpath: string) {
+  let audioBuffer = opode_cache.get(fpath);
+  if (!audioBuffer) {
+    const fullPath = path.join("./opodes", fpath + ".opus");
+    if (fs.existsSync(fullPath)) {
+      audioBuffer = fs.readFileSync(fullPath);
+      opode_cache.set(fpath, audioBuffer);
+    }
+  }
+  const stream = Readable.from(audioBuffer!);
+  let audioResource = createAudioResource(stream, {inputType: StreamType.OggOpus});
+  return audioResource;
+}
+
+/*
     PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO
 */
 import * as stream from "node:stream";
-// copy all the audio files into ram first
-let opodes:Map<string,Buffer>;
+// copy all the audio file paths into ram first
+let opodes: Set<string>;
 function refreshOpodes(){
-  opodes = new Map(
+  opodes = new Set(
     fs.readdirSync("./opodes",{encoding:"utf8",recursive:true})
     .filter(s=>s.endsWith(".opus"))
-    .map(fname=>[fname.replace('\\','/').slice(0,-5), fs.readFileSync(`opodes/${fname}`)])
+    .map(fname=>fname.replace('\\','/').slice(0,-5))
   );
+  opode_cache.clear();
 }
 refreshOpodes();
 
@@ -110,7 +138,7 @@ function brstm(somebuffer:Buffer){
 
 function beep(channel_id: Snowflake, fpath:string){
   if (players.has(channel_id) && opodes.has(fpath)){
-    players.get(channel_id)!.play(createAudioResource(brstm(opodes.get(fpath)!), {inputType:StreamType.OggOpus}));
+    players.get(channel_id)?.play(getOpodeResource(fpath));
   }
 }
 

@@ -1,5 +1,6 @@
 opodes/***
 html/***
 keys/***
-app.js
+dist/***
+misc/***
 package.json
