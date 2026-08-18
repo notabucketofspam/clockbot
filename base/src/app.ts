@@ -7,7 +7,17 @@ import fs from "node:fs";
 import path from 'node:path';
 const token = fs.readFileSync(path.resolve("./keys/discord_bot_token"), {encoding:'utf8'});
 
-import {Client, Events, GatewayIntentBits, VoiceChannel, SlashCommandBuilder, Collection, Snowflake, CommandInteraction, MessageFlags} from "discord.js";
+import {
+  Client,
+  Events,
+  GatewayIntentBits,
+  VoiceChannel,
+  SlashCommandBuilder,
+  Collection,
+  Snowflake,
+  CommandInteraction,
+  MessageFlags
+} from "discord.js";
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
 function login(){
   client.once(Events.ClientReady, readyClient => {
@@ -46,7 +56,16 @@ client.on(Events.InteractionCreate, async interaction =>{
 /*
     VOICE CHAT    VOICE CHAT    VOICE CHAT    VOICE CHAT    VOICE CHAT    VOICE CHAT    VOICE CHAT    VOICE CHAT
 */
-import { joinVoiceChannel, createAudioPlayer, createAudioResource,StreamType, AudioPlayer, getVoiceConnection } from "@discordjs/voice";
+import { 
+  joinVoiceChannel,
+  createAudioPlayer,
+  createAudioResource,
+  StreamType,
+  AudioPlayer,
+  getVoiceConnection,
+  demuxProbe,
+  AudioResource
+} from "@discordjs/voice";
 
 const players: Record<Snowflake, AudioPlayer> = Object.create(null);
 
@@ -89,7 +108,7 @@ async function leave_chat(channel_id: Snowflake){
 /*
   memory management
 */
-import {Readable} from "node:stream";
+import stream from "node:stream";
 import { LRUCache } from "lru-cache";
 const opode_cache = new LRUCache<string, Buffer>({
   maxSize: 50 * 2**20, // 50 MB
@@ -99,25 +118,75 @@ const opode_cache = new LRUCache<string, Buffer>({
   ttl: 1000 * 60 * 60 * 24, // 1 day
 });
 
-function getOpodeResource(fpath: string) {
-  let audioBuffer = opode_cache.get(fpath);
-  if (!audioBuffer) {
-    const fullPath = path.join("./opodes", fpath + ".opus");
-    if (fs.existsSync(fullPath)) {
-      audioBuffer = fs.readFileSync(fullPath);
-      opode_cache.set(fpath, audioBuffer);
-    }
-  }
-  const stream = Readable.from(audioBuffer!);
-  let audioResource = createAudioResource(stream, {inputType: StreamType.OggOpus});
-  return audioResource;
-}
-
 /*
     PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO    PLAY AUDIO
 */
-// copy all the audio file paths into ram first
+
+/**get the audio from disk or network*/
+async function getOpodeResource(fpath: string): Promise<AudioResource<null> | null> {
+  let audioBuffer = opode_cache.get(fpath);
+  let audioResource: AudioResource<null> | null = null;
+
+  if (audioBuffer) {
+    // we have it cached
+  } else {
+    if (fpath.startsWith('[extern]')) {
+      // he's somewhere else
+      const actualPath = fpath.slice(8);
+      let approval = false;
+      for (const url of buckets){
+        if (actualPath.startsWith(url)){
+          approval = true;
+          break;
+        }
+      }
+      if (approval) {
+        // we are ok to use this bucket
+        const response = await fetch(actualPath);
+        if (response.ok && response.body) {
+          // got the item ok
+          const arrayBuffer = await response.arrayBuffer();
+          audioBuffer = Buffer.from(arrayBuffer);
+        } else {
+          // some kinda problem with fetching
+          console.warn('fetch failed');
+        }
+      } else {
+        // unapproved resource, so just ignore it I guess idk lol
+        console.warn('unapproved resource');
+      }
+    } else {
+      // is a local resource
+      const fullPath = path.join("./opodes", fpath + ".opus");
+      if (fs.existsSync(fullPath)) {
+        // it's right here on the disk
+        audioBuffer = await fs.promises.readFile(fullPath, {encoding:null});
+      } else {
+        // somehow wasnt found
+      }
+    }
+  }
+
+  if (audioBuffer){
+    if (!opode_cache.has(fpath)) {      
+      opode_cache.set(fpath, audioBuffer);
+    }
+    const stream_A = stream.Readable.from(audioBuffer);
+    audioResource = createAudioResource(stream_A, {inputType: StreamType.OggOpus});
+  }
+  
+  return audioResource;
+}
+
+// @ts-ignore
+import board from "../opodes/boards.js";
+
+/**some external buckets that we're allowed to pull from*/
+let buckets: Set<string>;
+
+/** this is all the paths for local audio files*/
 let opodes: Set<string>;
+
 function refreshOpodes(){
   opodes = new Set(
     fs.readdirSync("./opodes",{encoding:"utf8",recursive:true})
@@ -126,12 +195,18 @@ function refreshOpodes(){
   );
   opode_cache.clear();
   console.log(`refreshed opodes: ${opodes.size} files`);
+  
+  // refresh the approved buckets
+  buckets = new Set(board.filter((b:any)=>'bucket' in b).map((b:any)=>b.bucket));
 }
 refreshOpodes();
 
-function beep(channel_id: Snowflake, fpath:string){
-  if (players[channel_id] && opodes.has(fpath)){
-    players[channel_id]?.play(getOpodeResource(fpath));
+async function beep(channel_id: Snowflake, fpath:string){
+  if (players[channel_id] && (opodes.has(fpath) || fpath.startsWith('[extern]'))) {
+    const opodeResource = await getOpodeResource(fpath);
+    if (opodeResource) {
+      players[channel_id]?.play(opodeResource);
+    }
   }
 }
 

@@ -50,5 +50,8 @@ var board = [
 {"name":"Gambling","sound":["Lets go gambling","aw dang it","lets be financially responsible","I cant stop winning","we are not gambling","nah youre just not doing it right man","its all in the feet","pitter patter","youre about to see a master at work","Ive lost so much money","gambling avalanche","todays lesson","WINNER","is that all you ever say","its like I dont wanna gamble","Im gonna have to say it","was that the last of it","yeah I think so","you know you cant keep doing this forever Mr Gambler","I know","life is gambling","gambling is life","gambling is gay"]},
 {"name":"Helldivers2","title":"Helldivers 2","bucket":"https://idazntksvlmn.objectstorage.us-ashburn-1.oci.customer-oci.com/n/idazntksvlmn/b/waluigi_servebeer/o/","query":"?prefix=sound/Helldivers2&fields=name"},
 ];
-window.board = board;
+if (typeof window !== 'undefined') {
+	window.board = board;
+}
+export default board;
 
