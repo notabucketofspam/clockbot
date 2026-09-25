@@ -4,3 +4,4 @@ keys/***
 dist/***
 misc/***
 package.json
+vhost/***
